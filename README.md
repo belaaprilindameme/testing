@@ -4,14 +4,17 @@
 
 # 🤖 Bot Telegram E-Commerce
 
-<img src="https://img.shields.io/badge/Node.js-v14+-green?style=for-the-badge" alt="Node.js">
+<img src="https://img.shields.io/badge/Node.js-v18+-green?style=for-the-badge" alt="Node.js">
 <img src="https://img.shields.io/badge/Python-v3.8+-blue?style=for-the-badge" alt="Python">
 <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
 <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status">
+<img src="https://img.shields.io/badge/VPS-Ready-orange?style=for-the-badge" alt="VPS Ready">
 
 **Bot Telegram lengkap untuk platform E-Commerce dengan sistem penjualan, pemesanan, pembayaran, tracking, notifikasi, dan analytics.**
 
-[🚀 Quick Start](#-quick-start) • [📚 Documentation](#-dokumentasi) • [🎯 Features](#-fitur-utama) • [💡 Examples](#-contoh-penggunaan) • [🤝 Contributing](#-kontribusi)
+**⚡ One-Command Deploy ke VPS:** `curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash`
+
+[🚀 Quick Start](#-quick-start) • [🚀 Deploy VPS](#-deploy-ke-vps) • [📚 Documentation](#-dokumentasi) • [🎯 Features](#-fitur-utama) • [💡 Examples](#-contoh-penggunaan) • [🤝 Contributing](#-kontribusi)
 
 </div>
 
@@ -23,6 +26,7 @@
 - [🛠️ Tech Stack](#-tech-stack)
 - [📋 Requirements](#-requirements)
 - [🚀 Quick Start](#-quick-start)
+- [🚀 Deploy ke VPS](#-deploy-ke-vps)
 - [📚 Dokumentasi](#-dokumentasi)
 - [🎮 Cara Penggunaan](#-cara-penggunaan)
 - [📁 Struktur Project](#-struktur-project)
@@ -92,10 +96,11 @@
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Runtime:** Node.js v14+
+- **Runtime:** Node.js v18+ LTS
 - **Framework:** Telegraf.js (Telegram Bot API)
 - **Database:** SQLite3
 - **Payment:** Midtrans Client
+- **Process Manager:** PM2
 - **Environment:** dotenv
 
 ### Analytics & Reporting
@@ -108,18 +113,20 @@
 - **Version Control:** Git & GitHub
 - **Package Manager:** npm, pip
 - **Development:** Nodemon (auto-reload)
+- **VPS:** Ubuntu, Debian, Kali Linux (semua versi)
 
 ---
 
 ## 📋 Requirements
 
 ### Sistem Operasi
-- Windows, macOS, atau Linux
+- **Local:** Windows, macOS, atau Linux
+- **VPS:** Ubuntu 18+, Debian 10+, Kali Linux
 - Minimal 2GB RAM
 - 500MB storage
 
 ### Software yang Diperlukan
-- **Node.js** v14+ ([download](https://nodejs.org))
+- **Node.js** v18+ ([download](https://nodejs.org))
 - **Python** 3.8+ ([download](https://www.python.org))
 - **Git** ([download](https://git-scm.com))
 - **Terminal/CMD** untuk menjalankan commands
@@ -134,20 +141,22 @@
 
 ## 🚀 Quick Start
 
-### 1. Clone Repository
+### Instalasi Lokal (Windows/Mac/Linux)
+
+#### 1. Clone Repository
 
 ```bash
 git clone https://github.com/belaaprilindameme/testing.git
 cd testing
 ```
 
-### 2. Install Node.js Dependencies
+#### 2. Install Node.js Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Setup Python Environment
+#### 3. Setup Python Environment
 
 ```bash
 # Create virtual environment (optional tapi recommended)
@@ -163,13 +172,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Konfigurasi Environment
+#### 4. Konfigurasi Environment
 
 ```bash
 # Copy template
 cp .env.example .env
 
-# Edit .env dengan editor favorit (VS Code, Notepad++, etc)
+# Edit .env dengan editor favorit
+nano .env
 # Isi dengan:
 # - TELEGRAM_BOT_TOKEN (dari @BotFather)
 # - MIDTRANS_SERVER_KEY
@@ -177,7 +187,7 @@ cp .env.example .env
 # - ADMIN_ID (user ID Telegram Anda)
 ```
 
-### 5. Jalankan Bot
+#### 5. Jalankan Bot
 
 ```bash
 # Development mode (dengan auto-reload)
@@ -188,6 +198,116 @@ npm start
 ```
 
 ✅ Bot siap menerima pesan dari Telegram!
+
+---
+
+## 🚀 Deploy ke VPS
+
+### ⚡ One-Command Installation (Recommended)
+
+Buka terminal di VPS Anda dan jalankan:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash
+```
+
+Script akan secara otomatis:
+- ✅ Detect OS (Ubuntu, Debian, Kali Linux)
+- ✅ Install semua dependencies
+- ✅ Setup Node.js & Python
+- ✅ Clone repository
+- ✅ Install npm & pip packages
+- ✅ Setup PM2 process manager
+- ✅ Configure auto-start on reboot
+- ✅ Setup firewall rules
+
+### Manual Installation (Jika Anda Prefer)
+
+#### Step 1: SSH ke VPS
+
+```bash
+ssh user@your-vps-ip
+```
+
+#### Step 2: Install Install Script
+
+```bash
+cd ~ && curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh -o install-vps.sh && chmod +x install-vps.sh && ./install-vps.sh
+```
+
+#### Step 3: Configure Environment
+
+```bash
+nano ~/telegram-bot/.env
+```
+
+Isi dengan credentials Anda:
+```env
+TELEGRAM_BOT_TOKEN=your_token
+MIDTRANS_SERVER_KEY=your_server_key
+MIDTRANS_CLIENT_KEY=your_client_key
+ADMIN_ID=your_telegram_id
+```
+
+#### Step 4: Start Bot
+
+```bash
+cd ~/telegram-bot
+pm2 start index.js --name "telegram-bot"
+pm2 save
+```
+
+#### Step 5: View Logs
+
+```bash
+pm2 logs telegram-bot
+```
+
+### 📊 PM2 Commands Cheatsheet
+
+```bash
+# Start bot
+pm2 start ~/telegram-bot/index.js --name "telegram-bot"
+
+# Stop bot
+pm2 stop telegram-bot
+
+# Restart bot
+pm2 restart telegram-bot
+
+# View real-time logs
+pm2 logs telegram-bot
+
+# Monitor all processes
+pm2 monit
+
+# Auto-start on system reboot
+pm2 startup
+pm2 save
+
+# Remove bot
+pm2 delete telegram-bot
+```
+
+### 🔒 VPS Security Best Practices
+
+```bash
+# 1. Update system
+sudo apt update && sudo apt upgrade -y
+
+# 2. Configure firewall
+sudo ufw allow 22/tcp
+sudo ufw allow 3000/tcp
+sudo ufw enable
+
+# 3. Setup SSH keys
+ssh-copy-id -i ~/.ssh/id_rsa.pub user@your-vps-ip
+
+# 4. Disable password login (optional)
+sudo nano /etc/ssh/sshd_config
+# Change: PasswordAuthentication no
+sudo systemctl restart sshd
+```
 
 ---
 
@@ -246,6 +366,8 @@ Buka Telegram dan cari bot Anda atau ketik command berikut:
 testing/
 │
 ├── 📄 index.js                    # Bot entry point utama
+├── 📄 install-vps.sh              # Auto-install script untuk VPS
+├── 📄 install-linux.sh            # Auto-install script untuk Linux
 ├── 📄 package.json                # Node.js dependencies
 ├── 📄 requirements.txt             # Python dependencies
 ├── 📄 .env.example                # Template environment
@@ -273,6 +395,8 @@ testing/
 │   ├── sales_report.csv
 │   └── analytics_chart.png
 │
+├── 📁 logs/                       # Application logs
+│
 ├── 📄 README.md                   # File ini
 ├── 📄 SETUP_GUIDE.md              # Setup guide lengkap
 └── 📄 API_DOCS.md                 # API documentation
@@ -297,7 +421,7 @@ DATABASE_PATH=./database/ecommerce.db
 
 # ============ SERVER ============
 PORT=3000
-NODE_ENV=development
+NODE_ENV=production
 
 # ============ ADMIN ============
 ADMIN_ID=your_telegram_user_id
@@ -449,6 +573,10 @@ npm start
 
 # Atau jalankan dengan logging
 DEBUG=telegraf:* npm start
+
+# Jika menggunakan PM2:
+pm2 restart telegram-bot
+pm2 logs telegram-bot
 ```
 
 ### ❌ Error: "Cannot find module 'telegraf'"
@@ -484,10 +612,37 @@ npm start
 **Solusi:**
 ```bash
 # Pastikan Python 3.8+ installed
-python --version
+python3 --version
 
 # Install dependencies ulang
 pip install -r requirements.txt
+```
+
+### ❌ VPS Deployment Issues
+
+**Bot tidak start setelah reboot:**
+```bash
+# Cek PM2 status
+pm2 list
+
+# Re-save configuration
+pm2 save
+
+# Setup startup script
+sudo pm2 startup systemd -u $USER --hp $HOME
+pm2 save
+```
+
+**Port sudah digunakan:**
+```bash
+# Cek port yang digunakan
+lsof -i :3000
+
+# Kill process yang mengunakan port
+kill -9 <PID>
+
+# Atau gunakan port lain di .env
+# Ubah PORT=3001 di file .env
 ```
 
 ---
@@ -512,36 +667,25 @@ Setup webhook di Midtrans Dashboard untuk notifikasi pembayaran real-time.
 
 ---
 
-## 🚢 Deployment
+## 🚢 Deployment Options
 
-### Deploy ke Production
-
-**Option 1: VPS/Server**
+### Option 1: VPS (Recommended)
 ```bash
-# SSH ke server
-ssh user@your-server
-
-# Clone repo
-git clone https://github.com/belaaprilindameme/testing.git
-
-# Setup & run
-npm install
-cp .env.example .env
-# Edit .env dengan production settings
-npm start
+# One-command deploy
+curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash
 ```
 
-**Option 2: Heroku**
+### Option 2: Docker
+```bash
+docker build -t telegram-bot .
+docker run -d --env-file .env telegram-bot
+```
+
+### Option 3: Heroku
 ```bash
 heroku login
 heroku create your-app-name
 git push heroku main
-```
-
-**Option 3: Docker**
-```bash
-docker build -t telegram-bot .
-docker run -d --env-file .env telegram-bot
 ```
 
 ---
@@ -590,6 +734,7 @@ Terima kasih kepada:
 - [Telegraf.js](https://telegraf.dev) - Telegram Bot API
 - [Midtrans](https://midtrans.com) - Payment Gateway
 - [SQLite](https://www.sqlite.org) - Database
+- [PM2](https://pm2.keymetrics.io) - Process Manager
 - Semua contributor yang membantu project ini
 
 ---
@@ -599,5 +744,7 @@ Terima kasih kepada:
 ### ⭐ Jika project ini membantu, jangan lupa beri star! ⭐
 
 **Made with ❤️ for E-Commerce**
+
+**🚀 Ready to Deploy!**
 
 </div>
