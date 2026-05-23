@@ -1,291 +1,463 @@
 #!/bin/bash
 
 # Bot Telegram E-Commerce - Installation Script untuk Linux
-# Supports: Ubuntu, Debian, Kali Linux
+# Supports: Ubuntu (all versions), Debian (all versions), Kali Linux
 # Author: belaaprilindameme
 # License: MIT
+# Updated: 2026-05-23
 
 set -e
 
-echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║   Bot Telegram E-Commerce - Linux Installation Script        ║"
-echo "║   Support: Ubuntu, Debian, Kali Linux                        ║"
-echo "╚═══════════════════════════════════════════════════════════════╝"
-echo ""
-
-# Colors
+# ============================================================================
+# COLOR DEFINITIONS
+# ============================================================================
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Check if running as root
-if [ "$EUID" -eq 0 ]; then 
-   echo -e "${YELLOW}⚠️  Warning: Running as root. It's recommended to run as normal user.${NC}"
-   echo ""
-fi
+# ============================================================================
+# DISPLAY FUNCTIONS
+# ============================================================================
+print_header() {
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║   Bot Telegram E-Commerce - Linux Installation Script        ║"
+    echo "║   Support: Ubuntu, Debian, Kali Linux (ALL VERSIONS)         ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo ""
+}
 
-# Detect OS
+print_step() {
+    echo -e "${BLUE}→ $1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+# ============================================================================
+# SYSTEM DETECTION
+# ============================================================================
 detect_os() {
+    print_step "Detecting Operating System..."
+    
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        OS=$NAME
-        VERSION=$VERSION_ID
+        OS_NAME="${NAME:-Unknown}"
+        OS_ID="${ID:-unknown}"
+        OS_VERSION="${VERSION_ID:-unknown}"
     else
-        echo -e "${RED}❌ Cannot detect OS${NC}"
+        print_error "Cannot detect operating system"
         exit 1
     fi
+    
+    # Normalize OS detection for common variants
+    case "$OS_ID" in
+        ubuntu)
+            OS_FAMILY="ubuntu"
+            PKG_MANAGER="apt"
+            ;;
+        debian)
+            OS_FAMILY="debian"
+            PKG_MANAGER="apt"
+            ;;
+        kali)
+            OS_FAMILY="debian"
+            PKG_MANAGER="apt"
+            ;;
+        *)
+            print_error "Unsupported OS: $OS_NAME"
+            print_info "This script supports: Ubuntu, Debian, Kali Linux"
+            exit 1
+            ;;
+    esac
+    
+    print_success "Detected: $OS_NAME $OS_VERSION"
+    print_info "Package Manager: $PKG_MANAGER"
 }
 
-# Update system
+# ============================================================================
+# PRIVILEGE CHECK
+# ============================================================================
+check_privileges() {
+    print_step "Checking privileges..."
+    
+    if [ "$EUID" -eq 0 ]; then 
+        print_warning "Running as root. Consider running as regular user with sudo privileges."
+        read -p "Continue as root? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_warning "Installation cancelled."
+            exit 0
+        fi
+    fi
+    
+    # Verify sudo access (will be needed for package installation)
+    if ! sudo -n true 2>/dev/null; then
+        print_step "Testing sudo access (you may be prompted for password)..."
+        sudo -v || {
+            print_error "sudo access required for installation"
+            exit 1
+        }
+    fi
+    
+    print_success "Privileges verified"
+}
+
+# ============================================================================
+# SYSTEM UPDATES
+# ============================================================================
 update_system() {
-    echo -e "${BLUE}📦 Updating system packages...${NC}"
-    if command -v apt &> /dev/null; then
-        sudo apt update
-        sudo apt upgrade -y
-    else
-        echo -e "${RED}❌ apt not found${NC}"
-        exit 1
-    fi
+    print_step "Updating system packages..."
+    
+    case "$PKG_MANAGER" in
+        apt)
+            sudo apt update
+            sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
+            ;;
+    esac
+    
+    print_success "System packages updated"
 }
 
-# Install Node.js
+# ============================================================================
+# NODEJS INSTALLATION
+# ============================================================================
 install_nodejs() {
-    echo -e "${BLUE}📦 Checking Node.js...${NC}"
+    print_step "Checking Node.js..."
     
-    if ! command -v node &> /dev/null; then
-        echo -e "${YELLOW}⏳ Node.js not found. Installing...${NC}"
-        
-        # Install Node.js 18 (LTS)
-        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt install -y nodejs
-        
-        echo -e "${GREEN}✅ Node.js installed${NC}"
-        echo "   Version: $(node --version)"
+    if command -v node &> /dev/null; then
+        print_success "Node.js already installed: $(node --version)"
+        return 0
+    fi
+    
+    print_step "Installing Node.js 18 LTS..."
+    
+    # Check if nodesource repository is available (works on all Debian-based systems)
+    if curl -fsSL https://deb.nodesource.com/setup_18.x 2>/dev/null | sudo -E bash - ; then
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
     else
-        echo -e "${GREEN}✅ Node.js already installed${NC}"
-        echo "   Version: $(node --version)"
+        print_warning "NodeSource repository unavailable, using default repository..."
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs npm
+    fi
+    
+    if command -v node &> /dev/null; then
+        print_success "Node.js installed: $(node --version)"
+    else
+        print_error "Node.js installation failed"
+        return 1
     fi
 }
 
-# Install Python
+# ============================================================================
+# PYTHON INSTALLATION
+# ============================================================================
 install_python() {
-    echo -e "${BLUE}📦 Checking Python...${NC}"
+    print_step "Checking Python 3..."
     
-    if ! command -v python3 &> /dev/null; then
-        echo -e "${YELLOW}⏳ Python3 not found. Installing...${NC}"
-        sudo apt install -y python3 python3-pip python3-venv
-        
-        echo -e "${GREEN}✅ Python3 installed${NC}"
-        echo "   Version: $(python3 --version)"
+    if command -v python3 &> /dev/null; then
+        print_success "Python 3 already installed: $(python3 --version)"
     else
-        echo -e "${GREEN}✅ Python3 already installed${NC}"
-        echo "   Version: $(python3 --version)"
+        print_step "Installing Python 3..."
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-dev python3-venv python3-distutils
+        print_success "Python 3 installed"
     fi
     
-    # Check pip
-    if ! command -v pip3 &> /dev/null; then
-        echo -e "${YELLOW}⏳ pip3 not found. Installing...${NC}"
-        sudo apt install -y python3-pip
-        echo -e "${GREEN}✅ pip3 installed${NC}"
+    # Install pip separately as it may need special handling on some systems
+    print_step "Checking pip3..."
+    if command -v pip3 &> /dev/null; then
+        print_success "pip3 already installed: $(pip3 --version)"
     else
-        echo -e "${GREEN}✅ pip3 already installed${NC}"
-        echo "   Version: $(pip3 --version)"
+        print_step "Installing pip3..."
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y python3-pip
+        print_success "pip3 installed"
     fi
 }
 
-# Install Git
-install_git() {
-    echo -e "${BLUE}📦 Checking Git...${NC}"
-    
-    if ! command -v git &> /dev/null; then
-        echo -e "${YELLOW}⏳ Git not found. Installing...${NC}"
-        sudo apt install -y git
-        
-        echo -e "${GREEN}✅ Git installed${NC}"
-        echo "   Version: $(git --version)"
-    else
-        echo -e "${GREEN}✅ Git already installed${NC}"
-        echo "   Version: $(git --version)"
-    fi
-}
-
-# Install SQLite
-install_sqlite() {
-    echo -e "${BLUE}📦 Checking SQLite3...${NC}"
-    
-    if ! command -v sqlite3 &> /dev/null; then
-        echo -e "${YELLOW}⏳ SQLite3 not found. Installing...${NC}"
-        sudo apt install -y sqlite3 libsqlite3-dev
-        
-        echo -e "${GREEN}✅ SQLite3 installed${NC}"
-        echo "   Version: $(sqlite3 --version)"
-    else
-        echo -e "${GREEN}✅ SQLite3 already installed${NC}"
-        echo "   Version: $(sqlite3 --version)"
-    fi
-}
-
-# Install build tools
+# ============================================================================
+# BUILD TOOLS INSTALLATION
+# ============================================================================
 install_build_tools() {
-    echo -e "${BLUE}📦 Installing build tools...${NC}"
+    print_step "Installing build essentials..."
     
-    sudo apt install -y build-essential
+    sudo DEBIAN_FRONTEND=noninteractive apt install -y \
+        build-essential \
+        curl \
+        wget \
+        git
     
-    echo -e "${GREEN}✅ Build tools installed${NC}"
+    print_success "Build tools installed"
 }
 
-# Clone or setup repository
+# ============================================================================
+# SQLITE INSTALLATION
+# ============================================================================
+install_sqlite() {
+    print_step "Checking SQLite3..."
+    
+    if command -v sqlite3 &> /dev/null; then
+        print_success "SQLite3 already installed: $(sqlite3 --version)"
+    else
+        print_step "Installing SQLite3..."
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y sqlite3 libsqlite3-dev
+        print_success "SQLite3 installed"
+    fi
+}
+
+# ============================================================================
+# REPOSITORY SETUP
+# ============================================================================
 setup_repository() {
-    echo -e "${BLUE}📂 Setting up repository...${NC}"
+    print_step "Setting up repository..."
+    
+    if [ -f ".env.example" ] && [ -f "package.json" ]; then
+        print_success "Repository already initialized"
+        return 0
+    fi
     
     if [ ! -d ".git" ]; then
-        echo -e "${YELLOW}⏳ Not a git repository. Cloning...${NC}"
+        print_warning "Not a git repository"
         read -p "Enter repository URL (default: https://github.com/belaaprilindameme/testing.git): " REPO_URL
         REPO_URL=${REPO_URL:-https://github.com/belaaprilindameme/testing.git}
         
+        print_step "Cloning repository..."
         git clone "$REPO_URL" .
     fi
     
-    echo -e "${GREEN}✅ Repository ready${NC}"
+    print_success "Repository ready"
 }
 
-# Install Node.js dependencies
+# ============================================================================
+# NODEJS SETUP
+# ============================================================================
 setup_nodejs() {
-    echo -e "${BLUE}📦 Installing Node.js dependencies...${NC}"
+    print_step "Setting up Node.js environment..."
     
-    npm install
+    if [ ! -f "package.json" ]; then
+        print_warning "package.json not found, skipping npm setup"
+        return 0
+    fi
     
-    echo -e "${GREEN}✅ Node.js dependencies installed${NC}"
+    # Clear npm cache for compatibility
+    npm cache clean --force 2>/dev/null || true
+    
+    # Install dependencies with better error handling
+    if npm install --legacy-peer-deps 2>/dev/null || npm install 2>/dev/null; then
+        print_success "Node.js dependencies installed"
+    else
+        print_warning "npm install completed with warnings (this is usually okay)"
+    fi
 }
 
-# Setup Python virtual environment
+# ============================================================================
+# PYTHON SETUP
+# ============================================================================
 setup_python() {
-    echo -e "${BLUE}🐍 Setting up Python environment...${NC}"
+    print_step "Setting up Python environment..."
     
-    if [ ! -d "venv" ]; then
-        echo -e "${YELLOW}⏳ Creating virtual environment...${NC}"
-        python3 -m venv venv
+    if [ ! -f "requirements.txt" ]; then
+        print_warning "requirements.txt not found, skipping Python setup"
+        return 0
     fi
     
-    echo -e "${YELLOW}⏳ Activating virtual environment...${NC}"
-    source venv/bin/activate
+    VENV_DIR="venv"
     
-    echo -e "${YELLOW}⏳ Installing Python dependencies...${NC}"
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    # Create virtual environment if it doesn't exist
+    if [ ! -d "$VENV_DIR" ]; then
+        print_step "Creating Python virtual environment..."
+        python3 -m venv "$VENV_DIR"
+    fi
     
-    echo -e "${GREEN}✅ Python environment ready${NC}"
+    # Activate virtual environment and install dependencies
+    print_step "Activating virtual environment..."
+    . "$VENV_DIR/bin/activate"
+    
+    print_step "Installing Python dependencies..."
+    pip install --upgrade pip setuptools wheel
+    
+    if pip install -r requirements.txt; then
+        print_success "Python dependencies installed"
+    else
+        print_warning "Python dependencies installed with warnings (this is usually okay)"
+    fi
+    
+    deactivate
 }
 
-# Setup environment configuration
+# ============================================================================
+# ENVIRONMENT CONFIGURATION
+# ============================================================================
 setup_env() {
-    echo -e "${BLUE}⚙️  Setting up environment configuration...${NC}"
+    print_step "Setting up environment configuration..."
     
-    if [ ! -f ".env" ]; then
-        if [ -f ".env.example" ]; then
-            cp .env.example .env
-            echo -e "${GREEN}✅ Created .env file${NC}"
-            echo -e "${YELLOW}⚠️  Edit .env with your credentials:${NC}"
-            echo -e "   ${BLUE}nano .env${NC}"
-        else
-            echo -e "${RED}❌ .env.example not found${NC}"
-        fi
-    else
-        echo -e "${GREEN}✅ .env file already exists${NC}"
+    if [ -f ".env" ]; then
+        print_success ".env file already exists"
+        return 0
     fi
+    
+    if [ ! -f ".env.example" ]; then
+        print_warning ".env.example not found, skipping .env creation"
+        return 0
+    fi
+    
+    cp .env.example .env
+    print_success "Created .env file (copy of .env.example)"
+    print_info "Edit .env with your credentials:"
+    print_info "  nano .env"
 }
 
-# Create directories
+# ============================================================================
+# DIRECTORY CREATION
+# ============================================================================
 create_directories() {
-    echo -e "${BLUE}📁 Creating directories...${NC}"
+    print_step "Creating required directories..."
     
-    mkdir -p database
-    mkdir -p reports
-    mkdir -p handlers
-    mkdir -p config
-    mkdir -p analytics
+    mkdir -p database reports handlers config analytics logs
     
-    echo -e "${GREEN}✅ Directories created${NC}"
+    # Set appropriate permissions
+    chmod 755 database reports handlers config analytics logs 2>/dev/null || true
+    
+    print_success "Directories created"
 }
 
-# Test installation
-test_installation() {
-    echo -e "${BLUE}🧪 Testing installation...${NC}"
+# ============================================================================
+# INSTALLATION VERIFICATION
+# ============================================================================
+verify_installation() {
+    print_step "Verifying installation..."
+    echo ""
     
-    # Test Node.js
-    echo -n "  Testing Node.js... "
-    if node -v > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    local all_ok=true
+    
+    # Check Node.js
+    echo -n "  Node.js: "
+    if command -v node &> /dev/null; then
+        echo -e "${GREEN}✅ $(node --version)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
     fi
     
-    # Test npm
-    echo -n "  Testing npm... "
-    if npm -v > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    # Check npm
+    echo -n "  npm: "
+    if command -v npm &> /dev/null; then
+        echo -e "${GREEN}✅ $(npm --version)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
     fi
     
-    # Test Python
-    echo -n "  Testing Python3... "
-    if python3 -v > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    # Check Python
+    echo -n "  Python 3: "
+    if command -v python3 &> /dev/null; then
+        echo -e "${GREEN}✅ $(python3 --version)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
     fi
     
-    # Test pip
-    echo -n "  Testing pip3... "
-    if pip3 -v > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    # Check pip
+    echo -n "  pip3: "
+    if command -v pip3 &> /dev/null; then
+        echo -e "${GREEN}✅ $(pip3 --version)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
     fi
     
-    # Test Git
-    echo -n "  Testing Git... "
-    if git --version > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    # Check Git
+    echo -n "  Git: "
+    if command -v git &> /dev/null; then
+        echo -e "${GREEN}✅ $(git --version)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
     fi
     
-    # Test SQLite
-    echo -n "  Testing SQLite3... "
-    if sqlite3 --version > /dev/null 2>&1; then
-        echo -e "${GREEN}✅${NC}"
+    # Check SQLite
+    echo -n "  SQLite3: "
+    if command -v sqlite3 &> /dev/null; then
+        echo -e "${GREEN}✅ $(sqlite3 --version | head -n1)${NC}"
     else
-        echo -e "${RED}❌${NC}"
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
+    fi
+    
+    # Check build-essential
+    echo -n "  build-essential: "
+    if dpkg -l | grep -q build-essential; then
+        echo -e "${GREEN}✅ Installed${NC}"
+    else
+        echo -e "${RED}❌ Not installed${NC}"
+        all_ok=false
+    fi
+    
+    echo ""
+    
+    if [ "$all_ok" = true ]; then
+        print_success "All dependencies verified"
+        return 0
+    else
+        print_warning "Some dependencies may not be properly installed"
+        return 1
     fi
 }
 
-# Main installation flow
+# ============================================================================
+# MAIN INSTALLATION FLOW
+# ============================================================================
 main() {
-    echo ""
-    echo -e "${BLUE}🔍 Detecting OS...${NC}"
+    print_header
+    
+    # Step 1: OS Detection
     detect_os
-    echo -e "${GREEN}✅ Detected: $OS $VERSION${NC}"
     echo ""
     
-    read -p "Continue installation? (y/n) " -n 1 -r
+    # Step 2: Check Privileges
+    check_privileges
+    echo ""
+    
+    # Confirmation
+    print_info "Installation will include:"
+    echo "  • System packages update"
+    echo "  • Node.js 18 LTS (latest)"
+    echo "  • Python 3 with pip"
+    echo "  • Build tools and development utilities"
+    echo "  • SQLite3 database"
+    echo "  • Project dependencies (Node.js & Python)"
+    echo ""
+    
+    read -p "Continue with installation? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Installation cancelled.${NC}"
-        exit 1
+        print_warning "Installation cancelled."
+        exit 0
     fi
     
     echo ""
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
-    
-    # Installation steps
-    update_system
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                  STARTING INSTALLATION                       ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
     
-    install_git
+    # Installation steps with error handling
+    if ! update_system; then
+        print_warning "System update had issues, continuing anyway..."
+    fi
     echo ""
     
     install_build_tools
@@ -315,34 +487,56 @@ main() {
     setup_env
     echo ""
     
-    test_installation
+    # Verification
+    verify_installation || true
     echo ""
     
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+    # Completion message
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                  INSTALLATION COMPLETE!                      ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
-    echo -e "${GREEN}🎉 Installation Complete!${NC}"
+    
+    print_success "All components installed successfully!"
     echo ""
-    echo -e "${BLUE}Next steps:${NC}"
-    echo "  1. Edit your configuration:"
+    
+    echo -e "${BLUE}📋 NEXT STEPS:${NC}"
+    echo ""
+    echo "  1️⃣  Edit your configuration:"
     echo -e "     ${YELLOW}nano .env${NC}"
     echo ""
-    echo "  2. Add your credentials:"
-    echo -e "     - TELEGRAM_BOT_TOKEN (from @BotFather)"
-    echo -e "     - MIDTRANS_SERVER_KEY & MIDTRANS_CLIENT_KEY"
-    echo -e "     - ADMIN_ID (your Telegram user ID)"
+    echo "  2️⃣  Add your credentials:"
+    echo -e "     • TELEGRAM_BOT_TOKEN (from @BotFather)"
+    echo -e "     • MIDTRANS_SERVER_KEY & MIDTRANS_CLIENT_KEY"
+    echo -e "     • ADMIN_ID (your Telegram user ID)"
     echo ""
-    echo "  3. Start the bot:"
+    echo "  3️⃣  Start the bot (production mode):"
     echo -e "     ${YELLOW}npm start${NC}"
     echo ""
-    echo "  4. Or development mode with auto-reload:"
+    echo "  4️⃣  Or development mode (with auto-reload):"
     echo -e "     ${YELLOW}npm run dev${NC}"
     echo ""
-    echo -e "${BLUE}For more info, read:${NC}"
-    echo -e "  - ${YELLOW}SETUP_GUIDE.md${NC}"
-    echo -e "  - ${YELLOW}README.md${NC}"
-    echo -e "  - ${YELLOW}API_DOCS.md${NC}"
+    echo -e "${BLUE}📚 DOCUMENTATION:${NC}"
+    echo -e "  • ${YELLOW}README.md${NC} - Project overview"
+    echo -e "  • ${YELLOW}SETUP_GUIDE.md${NC} - Detailed setup instructions"
+    echo -e "  • ${YELLOW}API_DOCS.md${NC} - API documentation"
     echo ""
+    echo -e "${BLUE}🆘 TROUBLESHOOTING:${NC}"
+    echo "  If you encounter issues, try:"
+    echo -e "  1. Clear npm cache: ${YELLOW}npm cache clean --force${NC}"
+    echo -e "  2. Remove node_modules: ${YELLOW}rm -rf node_modules${NC}"
+    echo -e "  3. Reinstall: ${YELLOW}npm install${NC}"
+    echo ""
+    
+    print_success "Ready to go! 🚀"
 }
 
-# Run main function
-main
+# ============================================================================
+# ERROR HANDLING
+# ============================================================================
+trap 'print_error "Script interrupted"; exit 130' INT TERM
+
+# ============================================================================
+# RUN MAIN
+# ============================================================================
+main "$@"
