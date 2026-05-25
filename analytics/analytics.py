@@ -109,11 +109,11 @@ class Analytics:
         """Get payment statistics"""
         query = """
             SELECT 
-                payment_status,
+                status,
                 COUNT(id) as count,
-                SUM(amount) as total_amount
+                COALESCE(SUM(amount), 0) as total_amount
             FROM payments
-            GROUP BY payment_status
+            GROUP BY status
         """
         
         cursor = self.conn.cursor()
@@ -190,6 +190,14 @@ class Analytics:
         sales_data = self.get_sales_report()
         df = pd.DataFrame(sales_data)
         
+        if df.empty:
+            df = pd.DataFrame([{
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'total_revenue': 0,
+                'total_orders': 0,
+                'avg_order_value': 0
+            }])
+
         plt.figure(figsize=(12, 6))
         plt.subplot(1, 2, 1)
         plt.plot(df['date'], df['total_revenue'], marker='o', label='Revenue')
@@ -202,8 +210,12 @@ class Analytics:
         # Product sales
         plt.subplot(1, 2, 2)
         product_stats = self.get_product_stats()[:5]
-        products = [p['product_name'] for p in product_stats]
-        sales = [p['total_sold'] for p in product_stats]
+        if not product_stats:
+            products = ['No product data']
+            sales = [0]
+        else:
+            products = [p['product_name'] for p in product_stats]
+            sales = [p['total_sold'] for p in product_stats]
         
         plt.bar(products, sales)
         plt.xlabel('Product')
