@@ -12,12 +12,32 @@ NODE_MAJOR="${NODE_MAJOR:-20}"
 AUTO_UPGRADE="${AUTO_UPGRADE:-0}"
 AUTO_PM2="${AUTO_PM2:-1}"
 
+# FIX: Track script file path BEFORE any cd so verify_syntax can self-check
+# Works whether run via `bash install-linux.sh` or `curl ... | bash` (BASH_SOURCE empty → skip check)
+SCRIPT_FILE="${BASH_SOURCE[0]:-}"
+
 log(){ echo -e "${BLUE}→ $*${NC}"; }
 ok(){ echo -e "${GREEN}✅ $*${NC}"; }
 warn(){ echo -e "${YELLOW}⚠️  $*${NC}"; }
 err(){ echo -e "${RED}❌ $*${NC}"; }
 
-if [ "${EUID:-$(id -u)}" -eq 0 ]; then SUDO=""; else SUDO="sudo"; fi
+if [ "${EUID:-$(id -u)}" -eq 0 ]; then IS_ROOT=1; else IS_ROOT=0; fi
+
+run_root(){
+  if [ "$IS_ROOT" -eq 1 ]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+run_root_env(){
+  if [ "$IS_ROOT" -eq 1 ]; then
+    env DEBIAN_FRONTEND=noninteractive "$@"
+  else
+    sudo env DEBIAN_FRONTEND=noninteractive "$@"
+  fi
+}
 
 trap 'err "Install gagal di baris $LINENO. Cek log di atas."; exit 1' ERR
 
@@ -43,25 +63,25 @@ require_supported_os(){
 }
 
 prepare_sudo(){
-  if [ -n "$SUDO" ]; then
+  if [ "$IS_ROOT" -ne 1 ]; then
     log "Memeriksa akses sudo..."
-    $SUDO -v
+    sudo -v
   fi
 }
 
 apt_install_all(){
   log "Menjalankan apt update otomatis..."
-  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get update -y
+  run_root_env apt-get update -y
 
   if [ "$AUTO_UPGRADE" = "1" ]; then
     log "Menjalankan apt upgrade otomatis karena AUTO_UPGRADE=1..."
-    env DEBIAN_FRONTEND=noninteractive $SUDO apt-get upgrade -y
+    run_root_env apt-get upgrade -y
   else
     warn "apt upgrade dilewati. Installer hanya menjalankan apt update agar aman untuk VPS."
   fi
 
   log "Menginstall dependency sistem..."
-  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
+  run_root_env apt-get install -y \
     ca-certificates curl wget gnupg git unzip build-essential \
     python3 python3-pip python3-venv python3-dev \
     sqlite3 libsqlite3-dev
@@ -77,8 +97,11 @@ install_nodejs(){
   fi
 
   log "Menginstall Node.js ${NODE_MAJOR}.x otomatis..."
-  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | $SUDO -E bash -
-  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y nodejs
+  local nodesource_setup="/tmp/nodesource_setup_${NODE_MAJOR}.x.sh"
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" -o "$nodesource_setup"
+  run_root bash "$nodesource_setup"
+  rm -f "$nodesource_setup"
+  run_root_env apt-get install -y nodejs
   ok "Node.js aktif: $(node -v), npm: $(npm -v)"
 }
 
@@ -178,17 +201,44 @@ setup_env(){
   set_env QRIS_CHECK_INTERVAL_MS "5000"
   set_env PAYMENT_REQUEST_TIMEOUT "10000"
   set_env PAYMENT_NOTE "Scan QRIS, bayar sesuai nominal, lalu tunggu bot memverifikasi pembayaran otomatis."
+  set_env QRIS_EXPIRED_ACTION "edit"
+  # Hubungi Admin (kosong by default, bisa diisi via /admin)
+  set_env ADMIN_DISPLAY_NAME ""
+  set_env ADMIN_USERNAME ""
+  set_env ADMIN_CONTACT_URL ""
+  set_env ADMIN_CONTACT_TEXT "Silakan hubungi admin untuk bantuan pembayaran, kendala produk, atau pertanyaan sebelum membeli."
+  # Backup otomatis
   set_env BACKUP_AUTO_ENABLED "true"
   set_env BACKUP_TIME "00:00"
   set_env BACKUP_TIMEZONE "Asia/Jakarta"
   set_env BACKUP_KEEP_LOCAL "14"
   set_env BACKUP_INCLUDE_ENV "true"
-  set_env QRIS_EXPIRED_ACTION "edit"
+  # Maintenance & UI
   set_env MAINTENANCE_MODE "off"
   set_env PRODUCT_PAGE_SIZE "6"
+  # Payment reminder
   set_env PAYMENT_REMINDER_AFTER_MINUTES "5"
   set_env PAYMENT_REMINDER_INTERVAL_MS "120000"
+  # Broadcast
+  set_env BROADCAST_DELAY_MS "80"
+  # Pre Order
   set_env PREORDER_PRICE "$PREORDER_PRICE"
+  set_env PREORDER_MIN_TEXT_LENGTH "20"
+  set_env PREORDER_MAX_REVISION "1"
+  set_env PREORDER_QUOTE_EXPIRED_HOURS "24"
+  set_env PREORDER_QUOTE_EXPIRE_CHECK_MS "300000"
+  # Auto-cleanup
+  set_env CLEANUP_AUTO_ENABLED "true"
+  set_env CLEANUP_INTERVAL_MS "21600000"
+  set_env CLEANUP_QRIS_DAYS "7"
+  set_env CLEANUP_CART_DAYS "14"
+  set_env CLEANUP_ERROR_LOG_DAYS "30"
+  set_env CLEANUP_AUDIT_LOG_DAYS "180"
+  set_env CLEANUP_DELIVERY_LOG_DAYS "180"
+  set_env CLEANUP_NOTIFICATION_DAYS "30"
+  set_env CLEANUP_REPORT_DAYS "30"
+  set_env CLEANUP_NOTIFY_ADMIN "false"
+  # PM2
   set_env PM2_APP_NAME "$APP_NAME_DEFAULT"
   chmod 600 .env || true
   ok ".env selesai dibuat/diperbarui."
@@ -199,13 +249,20 @@ install_project_dependencies(){
   mkdir -p database reports logs backups analytics config handlers services
 
   log "Install dependency Node.js..."
-  npm cache clean --force >/dev/null 2>&1 || true
-  npm install --legacy-peer-deps || npm install
+  # FIX: npm cache clean can fail in some envs; redirect stderr too
+  npm cache clean --force 2>/dev/null || true
+  # FIX: try --legacy-peer-deps first, fallback to plain install
+  npm install --legacy-peer-deps 2>&1 || npm install 2>&1 || {
+    warn "npm install gagal. Coba jalankan ulang atau cek koneksi internet."
+    return 1
+  }
 
   if [ -f requirements.txt ] && [ -s requirements.txt ]; then
     log "Menyiapkan Python venv dan dependency analytics..."
     python3 -m venv venv
-    . venv/bin/activate
+    # FIX: use full path to activate in case subshell has different PATH
+    # shellcheck source=/dev/null
+    source "$(pwd)/venv/bin/activate"
     pip install --upgrade pip setuptools wheel
     pip install -r requirements.txt || warn "Sebagian dependency Python gagal, analytics masih bisa dicek manual."
     deactivate
@@ -215,46 +272,68 @@ install_project_dependencies(){
 
 verify_syntax(){
   log "Mengecek syntax project..."
-  if npm run test; then ok "Syntax JavaScript aman."; else warn "npm run test gagal. Cek output di atas."; fi
-  if [ -d analytics ]; then python3 -m py_compile analytics/*.py 2>/dev/null && ok "Syntax Python aman." || warn "Cek analytics Python jika diperlukan."; fi
-  bash -n install-linux.sh && ok "Syntax installer aman."
+  # FIX: npm run test checks all JS files listed in package.json scripts.test
+  if npm run test 2>&1; then ok "Syntax JavaScript aman."; else warn "npm run test gagal. Cek output di atas."; fi
+  # Python syntax check
+  if [ -d analytics ] && ls analytics/*.py >/dev/null 2>&1; then
+    if python3 -m py_compile analytics/*.py 2>/dev/null; then
+      ok "Syntax Python aman."
+    else
+      warn "Cek analytics Python jika diperlukan."
+    fi
+  fi
+  # FIX: bash -n only if script was run as a file (not piped from curl)
+  if [ -n "$SCRIPT_FILE" ] && [ -f "$SCRIPT_FILE" ]; then
+    bash -n "$SCRIPT_FILE" && ok "Syntax installer aman."
+  else
+    warn "Installer dijalankan via pipe, lewati pengecekan syntax bash."
+  fi
 }
 
 setup_pm2(){
   if [ "$AUTO_PM2" != "1" ]; then warn "PM2 dilewati karena AUTO_PM2=0."; return 0; fi
   log "Install dan menjalankan PM2 otomatis..."
-  npm install -g pm2
+  run_root npm install -g pm2
 
-  pm2 delete "$APP_NAME_DEFAULT" >/dev/null 2>&1 || true
+  # FIX: load .env for PM2_APP_NAME sebelum delete/start
+  # shellcheck source=.env
+  [ -f .env ] && set -o allexport && source .env && set +o allexport || true
+  local app_name="${PM2_APP_NAME:-$APP_NAME_DEFAULT}"
+
+  pm2 delete "$app_name" >/dev/null 2>&1 || true
   if [ -f ecosystem.config.js ]; then
     pm2 start ecosystem.config.js --env production
   else
-    pm2 start index.js --name "$APP_NAME_DEFAULT"
+    pm2 start index.js --name "$app_name"
   fi
   pm2 save
 
-  if [ -n "$SUDO" ]; then
-    $SUDO env PATH="$PATH" pm2 startup systemd -u "$USER" --hp "$HOME" || warn "pm2 startup perlu dijalankan manual jika auto-start reboot belum aktif."
-  else
+  if [ "$IS_ROOT" -eq 1 ]; then
     pm2 startup systemd -u "$(whoami)" --hp "$HOME" || warn "pm2 startup perlu dijalankan manual jika auto-start reboot belum aktif."
+  else
+    sudo env PATH="$PATH" pm2 startup systemd -u "$USER" --hp "$HOME" || warn "pm2 startup perlu dijalankan manual jika auto-start reboot belum aktif."
   fi
   ok "Bot sudah dijalankan dengan PM2."
 }
 
 summary(){
+  local app_name="${PM2_APP_NAME:-$APP_NAME_DEFAULT}"
   echo ""
   echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║                    INSTALL SELESAI                           ║"
+  echo "║                    INSTALL SELESAI ✅                        ║"
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
   ok "Project: $(pwd)"
+  echo ""
   echo "Command penting:"
   echo "  pm2 status"
-  echo "  pm2 logs $APP_NAME_DEFAULT"
-  echo "  pm2 restart $APP_NAME_DEFAULT"
+  echo "  pm2 logs $app_name"
+  echo "  pm2 restart $app_name"
   echo "  nano .env"
   echo ""
   warn "URL Generate QRIS dan URL Status QRIS sudah otomatis memakai default, tidak perlu diisi manual."
+  echo ""
+  ok "Bot siap digunakan! Pastikan TELEGRAM_BOT_TOKEN dan ADMIN_ID di .env sudah terisi."
 }
 
 main(){
