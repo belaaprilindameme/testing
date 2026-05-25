@@ -51,17 +51,17 @@ prepare_sudo(){
 
 apt_install_all(){
   log "Menjalankan apt update otomatis..."
-  $SUDO apt update -y
+  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get update -y
 
   if [ "$AUTO_UPGRADE" = "1" ]; then
     log "Menjalankan apt upgrade otomatis karena AUTO_UPGRADE=1..."
-    $SUDO DEBIAN_FRONTEND=noninteractive apt upgrade -y
+    env DEBIAN_FRONTEND=noninteractive $SUDO apt-get upgrade -y
   else
     warn "apt upgrade dilewati. Installer hanya menjalankan apt update agar aman untuk VPS."
   fi
 
   log "Menginstall dependency sistem..."
-  $SUDO DEBIAN_FRONTEND=noninteractive apt install -y \
+  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
     ca-certificates curl wget gnupg git unzip build-essential \
     python3 python3-pip python3-venv python3-dev \
     sqlite3 libsqlite3-dev
@@ -78,7 +78,7 @@ install_nodejs(){
 
   log "Menginstall Node.js ${NODE_MAJOR}.x otomatis..."
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | $SUDO -E bash -
-  $SUDO DEBIAN_FRONTEND=noninteractive apt install -y nodejs
+  env DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y nodejs
   ok "Node.js aktif: $(node -v), npm: $(npm -v)"
 }
 
