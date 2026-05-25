@@ -1,0 +1,11 @@
+.env
+node_modules/
+database/
+logs/
+reports/
+analytics/__pycache__/
+*.pyc
+npm-debug.log*
+.DS_Store
+backups/
+restore_tmp/

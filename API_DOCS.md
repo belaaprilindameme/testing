@@ -7,7 +7,7 @@ Dokumentasi lengkap untuk semua fitur dan API di Bot Telegram E-Commerce.
 ```
 Bot Telegram: @your_bot_name
 Database: SQLite (Local)
-Payment Gateway: Midtrans
+Payment Gateway: QRIS/GoPay
 ```
 
 ## 🛍️ Product Endpoints
@@ -152,7 +152,7 @@ Memproses checkout dan membuat link pembayaran.
 // 1. Get cart items
 // 2. Calculate total
 // 3. Create order in database
-// 4. Generate Midtrans payment link
+// 4. Generate QRIS/GoPay payment link
 // 5. Send payment URL to user
 ```
 
@@ -170,7 +170,7 @@ Total: Rp{amount}
 
 **Handler:** `paymentHandler.handlePaymentNotification(req)`
 
-Webhook dari Midtrans untuk notifikasi pembayaran.
+Webhook dari QRIS/GoPay untuk notifikasi pembayaran.
 
 ```javascript
 // Request body:
@@ -445,8 +445,10 @@ db.getOrders(telegramId)
 
 ```env
 TELEGRAM_BOT_TOKEN=xxxxx          # Bot token dari BotFather
-MIDTRANS_SERVER_KEY=xxxxx         # Server key Midtrans
-MIDTRANS_CLIENT_KEY=xxxxx         # Client key Midtrans
+QRIS_FILE_ID=                 # Telegram file_id gambar QRIS
+QRIS_IMAGE_URL=                # Alternatif link gambar QRIS
+GOPAY_NUMBER=08xxxxxxxxxx      # Nomor GoPay
+GOPAY_NAME=Nama Pemilik GoPay
 DATABASE_PATH=./database/ecommerce.db
 PORT=3000
 NODE_ENV=development
@@ -478,3 +480,8 @@ ADMIN_ID=your_telegram_user_id
 ---
 
 **API Documentation v1.0**
+
+
+## Pembayaran QRIS/GoPay
+
+Versi ini memakai pembayaran QRIS/GoPay dengan verifikasi admin. Setelah user checkout, bot menampilkan nomor order, total bayar, QRIS/GoPay, dan instruksi kirim bukti pembayaran. Admin mengetik `paid NOMOR_ORDER` untuk menandai pembayaran berhasil dan bot otomatis mengirim produk digital. Admin dapat mengetik `reject NOMOR_ORDER` untuk menolak pembayaran.

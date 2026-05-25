@@ -1,18 +1,25 @@
 {
   "name": "telegram-ecommerce-bot",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Bot Telegram lengkap untuk E-Commerce",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest"
+    "test": "node --check index.js && node --check config/database.js && node --check handlers/productHandler.js && node --check handlers/orderHandler.js && node --check handlers/paymentHandler.js && node --check handlers/preOrderHandler.js && node --check handlers/trackingHandler.js && node --check handlers/adminHandler.js && node --check services/backupService.js && node --check services/adminNotifyService.js && node --check services/adminContactService.js && node --check services/cleanupService.js && node --check ecosystem.config.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecommerce-bot",
+    "pm2:logs": "pm2 logs ecommerce-bot",
+    "audit": "npm run test && python3 -m py_compile analytics/*.py && bash -n install-linux.sh && bash -n install-vps.sh"
   },
   "dependencies": {
-    "telegraf": "^4.12.0",
     "axios": "^1.6.0",
-    "sqlite3": "^5.1.6",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "telegraf": "^4.12.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }

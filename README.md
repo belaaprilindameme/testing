@@ -1,750 +1,549 @@
-<!-- markdownlint-disable MD033 -->
+# Telegram Digital Store Bot
 
-<div align="center">
+Bot Telegram untuk jualan produk digital seperti file `.zip`, `.txt`, `.pdf`, script, akun, panduan, atau produk berbasis teks. Bot mendukung katalog produk, keranjang, checkout, QRIS dinamis otomatis, pengiriman produk digital otomatis, admin panel, backup harian, restore backup, laporan, dan PM2 auto-start.
 
-# 🤖 Bot Telegram E-Commerce
+## Fitur Utama
 
-<img src="https://img.shields.io/badge/Node.js-v18+-green?style=for-the-badge" alt="Node.js">
-<img src="https://img.shields.io/badge/Python-v3.8+-blue?style=for-the-badge" alt="Python">
-<img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
-<img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status">
-<img src="https://img.shields.io/badge/VPS-Ready-orange?style=for-the-badge" alt="VPS Ready">
+- Produk digital berupa **file saja**, **text saja**, atau **file + text**.
+- Admin upload produk langsung dari menu `/admin`.
+- Detail produk lengkap sebelum checkout: nama, harga, stok, kategori, deskripsi, dan S&K.
+- Review sebelum checkout supaya user tidak salah beli.
+- Payment QRIS/GoPay otomatis.
+- QRIS tampil langsung sebagai **foto + caption dalam satu pesan**, bukan link.
+- Bot cek status pembayaran otomatis.
+- Produk digital otomatis dikirim setelah payment sukses.
+- Menu hubungi admin otomatis dari `ADMIN_ID` / username admin.
+- Backup otomatis jam 00:00 WIB dan backup manual dari `/admin`.
+- Restore backup lewat upload file backup ke `/admin`.
+- Admin dashboard, laporan, export, audit log, maintenance mode, kategori, search, pagination, rating, refund, dan delivery log.
+- Installer satu command dari awal sampai akhir.
+- PM2 auto-start agar bot tetap hidup setelah VPS restart.
 
-**Bot Telegram lengkap untuk platform E-Commerce dengan sistem penjualan, pemesanan, pembayaran, tracking, notifikasi, dan analytics.**
+## Instalasi Otomatis di VPS
 
-**⚡ One-Command Deploy ke VPS:** `curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash`
-
-[🚀 Quick Start](#-quick-start) • [🚀 Deploy VPS](#-deploy-ke-vps) • [📚 Documentation](#-dokumentasi) • [🎯 Features](#-fitur-utama) • [💡 Examples](#-contoh-penggunaan) • [🤝 Contributing](#-kontribusi)
-
-</div>
-
----
-
-## 📋 Daftar Isi
-
-- [🎯 Fitur Utama](#-fitur-utama)
-- [🛠️ Tech Stack](#-tech-stack)
-- [📋 Requirements](#-requirements)
-- [🚀 Quick Start](#-quick-start)
-- [🚀 Deploy ke VPS](#-deploy-ke-vps)
-- [📚 Dokumentasi](#-dokumentasi)
-- [🎮 Cara Penggunaan](#-cara-penggunaan)
-- [📁 Struktur Project](#-struktur-project)
-- [🔧 Konfigurasi](#-konfigurasi)
-- [📊 Database Schema](#-database-schema)
-- [💡 Contoh Penggunaan](#-contoh-penggunaan)
-- [🐛 Troubleshooting](#-troubleshooting)
-- [🤝 Kontribusi](#-kontribusi)
-- [📝 License](#-license)
-
----
-
-## 🎯 Fitur Utama
-
-### 🛍️ Katalog Produk
-- Menampilkan semua produk dengan detail lengkap
-- Pencarian dan filter produk
-- Gambar produk dan deskripsi
-- Informasi stok real-time
-- Kategori produk
-
-### 🛒 Sistem Pemesanan
-- Keranjang belanja yang mudah digunakan
-- Tambah/kurangi jumlah produk
-- Simpan pesanan untuk nanti
-- Riwayat pemesanan
-- Detail pesanan lengkap
-
-### 💳 Integrasi Pembayaran
-- Integrasi dengan **Midtrans** untuk pembayaran aman
-- Multiple payment methods (kartu kredit, bank transfer, e-wallet)
-- Notifikasi pembayaran real-time
-- Verifikasi pembayaran otomatis
-- Rekam transaksi lengkap
-
-### 📦 Tracking Pesanan
-- Lacak status pesanan real-time
-- Nomor resi pengiriman
-- Informasi kurir & lokasi
-- Estimasi waktu tiba
-- Notifikasi update pengiriman
-
-### 🔔 Notifikasi & Update
-- Notifikasi order confirmation
-- Update pembayaran
-- Status pengiriman
-- Promo & penawaran spesial
-- Reminder keranjang yang ditinggalkan
-
-### 📊 Analytics & Reporting
-- Dashboard analytics lengkap
-- Laporan penjualan harian/bulanan
-- Statistik produk terlaris
-- Data pelanggan
-- Visualisasi grafik
-- Export data (JSON, CSV)
-
-### ⚙️ Admin Panel
-- Manajemen produk
-- Manajemen pesanan
-- Manajemen pembayaran
-- Monitoring analytics
-- Kirim notifikasi ke customer
-
----
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Runtime:** Node.js v18+ LTS
-- **Framework:** Telegraf.js (Telegram Bot API)
-- **Database:** SQLite3
-- **Payment:** Midtrans Client
-- **Process Manager:** PM2
-- **Environment:** dotenv
-
-### Analytics & Reporting
-- **Language:** Python 3.8+
-- **Data Processing:** Pandas
-- **Visualization:** Matplotlib
-- **Data Format:** JSON, CSV
-
-### Tools & Services
-- **Version Control:** Git & GitHub
-- **Package Manager:** npm, pip
-- **Development:** Nodemon (auto-reload)
-- **VPS:** Ubuntu, Debian, Kali Linux (semua versi)
-
----
-
-## 📋 Requirements
-
-### Sistem Operasi
-- **Local:** Windows, macOS, atau Linux
-- **VPS:** Ubuntu 18+, Debian 10+, Kali Linux
-- Minimal 2GB RAM
-- 500MB storage
-
-### Software yang Diperlukan
-- **Node.js** v18+ ([download](https://nodejs.org))
-- **Python** 3.8+ ([download](https://www.python.org))
-- **Git** ([download](https://git-scm.com))
-- **Terminal/CMD** untuk menjalankan commands
-
-### Akun & Services
-- **Telegram Account** - Untuk membuat bot
-- **Telegram Bot Token** - Dari [@BotFather](https://t.me/botfather)
-- **Midtrans Account** - Untuk payment gateway ([daftar](https://midtrans.com))
-- **Midtrans API Keys** - Server Key & Client Key
-
----
-
-## 🚀 Quick Start
-
-### Instalasi Lokal (Windows/Mac/Linux)
-
-#### 1. Clone Repository
-
-```bash
-git clone https://github.com/belaaprilindameme/testing.git
-cd testing
-```
-
-#### 2. Install Node.js Dependencies
-
-```bash
-npm install
-```
-
-#### 3. Setup Python Environment
-
-```bash
-# Create virtual environment (optional tapi recommended)
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-#### 4. Konfigurasi Environment
-
-```bash
-# Copy template
-cp .env.example .env
-
-# Edit .env dengan editor favorit
-nano .env
-# Isi dengan:
-# - TELEGRAM_BOT_TOKEN (dari @BotFather)
-# - MIDTRANS_SERVER_KEY
-# - MIDTRANS_CLIENT_KEY
-# - ADMIN_ID (user ID Telegram Anda)
-```
-
-#### 5. Jalankan Bot
-
-```bash
-# Development mode (dengan auto-reload)
-npm run dev
-
-# Production mode
-npm start
-```
-
-✅ Bot siap menerima pesan dari Telegram!
-
----
-
-## 🚀 Deploy ke VPS
-
-### ⚡ One-Command Installation (Recommended)
-
-Buka terminal di VPS Anda dan jalankan:
+Jalankan satu command ini:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash
 ```
 
-Script akan secara otomatis:
-- ✅ Detect OS (Ubuntu, Debian, Kali Linux)
-- ✅ Install semua dependencies
-- ✅ Setup Node.js & Python
-- ✅ Clone repository
-- ✅ Install npm & pip packages
-- ✅ Setup PM2 process manager
-- ✅ Configure auto-start on reboot
-- ✅ Setup firewall rules
-
-### Manual Installation (Jika Anda Prefer)
-
-#### Step 1: SSH ke VPS
+Atau:
 
 ```bash
-ssh user@your-vps-ip
+curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-linux.sh | bash
 ```
 
-#### Step 2: Install Install Script
+Installer akan otomatis melakukan:
 
-```bash
-cd ~ && curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh -o install-vps.sh && chmod +x install-vps.sh && ./install-vps.sh
+```text
+apt update
+install dependency sistem
+install Node.js / npm
+install Python
+install SQLite
+clone/update repository
+buat folder database/logs/reports/backups
+buat file .env
+install npm dependency
+cek syntax
+install PM2
+start bot dengan PM2
+aktifkan auto-restart
 ```
 
-#### Step 3: Configure Environment
+Saat instalasi, kamu hanya perlu mengisi data penting:
 
-```bash
-nano ~/telegram-bot/.env
+```text
+Token Bot Telegram
+ID Telegram Admin
+GoPay / QRIS API Key
+Admin tambahan jika ada
+Expired QRIS
+Port bot
 ```
 
-Isi dengan credentials Anda:
-```env
-TELEGRAM_BOT_TOKEN=your_token
-MIDTRANS_SERVER_KEY=your_server_key
-MIDTRANS_CLIENT_KEY=your_client_key
-ADMIN_ID=your_telegram_id
-```
+Installer **tidak akan menanyakan URL Generate QRIS dan URL Status QRIS**, karena sudah otomatis memakai default.
 
-#### Step 4: Start Bot
+## Konfigurasi `.env`
 
-```bash
-cd ~/telegram-bot
-pm2 start index.js --name "telegram-bot"
-pm2 save
-```
-
-#### Step 5: View Logs
-
-```bash
-pm2 logs telegram-bot
-```
-
-### 📊 PM2 Commands Cheatsheet
-
-```bash
-# Start bot
-pm2 start ~/telegram-bot/index.js --name "telegram-bot"
-
-# Stop bot
-pm2 stop telegram-bot
-
-# Restart bot
-pm2 restart telegram-bot
-
-# View real-time logs
-pm2 logs telegram-bot
-
-# Monitor all processes
-pm2 monit
-
-# Auto-start on system reboot
-pm2 startup
-pm2 save
-
-# Remove bot
-pm2 delete telegram-bot
-```
-
-### 🔒 VPS Security Best Practices
-
-```bash
-# 1. Update system
-sudo apt update && sudo apt upgrade -y
-
-# 2. Configure firewall
-sudo ufw allow 22/tcp
-sudo ufw allow 3000/tcp
-sudo ufw enable
-
-# 3. Setup SSH keys
-ssh-copy-id -i ~/.ssh/id_rsa.pub user@your-vps-ip
-
-# 4. Disable password login (optional)
-sudo nano /etc/ssh/sshd_config
-# Change: PasswordAuthentication no
-sudo systemctl restart sshd
-```
-
----
-
-## 📚 Dokumentasi
-
-Dokumentasi lengkap tersedia di:
-
-- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Panduan instalasi & konfigurasi detail
-- **[API_DOCS.md](./API_DOCS.md)** - Dokumentasi semua API endpoints
-- **[README.md](./README.md)** - File ini
-
----
-
-## 🎮 Cara Penggunaan
-
-### Untuk User (Pembeli)
-
-Buka Telegram dan cari bot Anda atau ketik command berikut:
-
-| Command | Fungsi |
-|---------|--------|
-| `/start` | Tampilkan menu utama |
-| `/products` | Lihat katalog produk |
-| `/cart` | Lihat keranjang belanja |
-| `/orders` | Riwayat pesanan saya |
-| `/tracking` | Lacak pesanan |
-| `/help` | Bantuan & panduan |
-
-**Cara berbelanja:**
-1. Ketik `/start` atau `/products`
-2. Pilih produk yang diinginkan
-3. Klik tombol "Tambah ke Keranjang"
-4. Klik `/cart` untuk melihat keranjang
-5. Klik "Checkout" untuk membayar
-6. Ikuti link pembayaran Midtrans
-7. Selesai! Pesanan akan diproses
-
-### Untuk Admin
-
-| Command | Fungsi |
-|---------|--------|
-| `/admin` | Buka admin panel |
-
-**Menu Admin:**
-- 📦 Kelola Produk (tambah, edit, hapus)
-- 📋 Kelola Pesanan (update status)
-- 💳 Kelola Pembayaran
-- 📊 Analytics & Report
-- 🔔 Kirim Notifikasi
-
----
-
-## 📁 Struktur Project
-
-```
-testing/
-│
-├── 📄 index.js                    # Bot entry point utama
-├── 📄 install-vps.sh              # Auto-install script untuk VPS
-├── 📄 install-linux.sh            # Auto-install script untuk Linux
-├── 📄 package.json                # Node.js dependencies
-├── 📄 requirements.txt             # Python dependencies
-├── 📄 .env.example                # Template environment
-├── 📄 .gitignore                  # Git ignore rules
-│
-├── 📁 config/
-│   └── database.js                # SQLite configuration & schema
-│
-├── 📁 handlers/
-│   ├── productHandler.js          # Katalog & detail produk
-│   ├── orderHandler.js            # Keranjang & pesanan
-│   ├── paymentHandler.js          # Midtrans payment
-│   ├── trackingHandler.js         # Tracking pengiriman
-│   └── adminHandler.js            # Admin panel
-│
-├── 📁 analytics/
-│   ├── analytics.py               # Report & visualisasi
-│   └── notifications.py           # Sistem notifikasi
-│
-├── 📁 database/
-│   └── ecommerce.db               # SQLite database (auto-generated)
-│
-├── 📁 reports/                    # Output reports & charts
-│   ├── analytics_report.json
-│   ├── sales_report.csv
-│   └── analytics_chart.png
-│
-├── 📁 logs/                       # Application logs
-│
-├── 📄 README.md                   # File ini
-├── 📄 SETUP_GUIDE.md              # Setup guide lengkap
-└── 📄 API_DOCS.md                 # API documentation
-```
-
----
-
-## 🔧 Konfigurasi
-
-### File .env Configuration
+Contoh konfigurasi utama:
 
 ```env
-# ============ TELEGRAM ============
-TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
-
-# ============ MIDTRANS PAYMENT ============
-MIDTRANS_SERVER_KEY=your_midtrans_server_key
-MIDTRANS_CLIENT_KEY=your_midtrans_client_key
-
-# ============ DATABASE ============
+TELEGRAM_BOT_TOKEN=isi_token_bot_kamu
+ADMIN_ID=isi_id_telegram_admin
+ADMIN_IDS=123456789,987654321
 DATABASE_PATH=./database/ecommerce.db
-
-# ============ SERVER ============
 PORT=3000
 NODE_ENV=production
 
-# ============ ADMIN ============
-ADMIN_ID=your_telegram_user_id
+PAYMENT=GOPAY
+GOPAY_KEY=isi_api_key_qris_kamu
+GOPAY_QRIS_GENERATE_URL=https://v1-gateway.autogopay.site/qris/generate
+GOPAY_QRIS_STATUS_URL=https://v1-gateway.autogopay.site/qris/status
+QRIS_EXPIRED_MINUTES=10
+QRIS_CHECK_INTERVAL_MS=5000
+QRIS_EXPIRED_ACTION=edit
+
+BACKUP_AUTO_ENABLED=true
+BACKUP_TIME=00:00
+BACKUP_TIMEZONE=Asia/Jakarta
+BACKUP_KEEP_LOCAL=14
+BACKUP_INCLUDE_ENV=true
+
+ADMIN_USERNAME=
+ADMIN_DISPLAY_NAME=
+ADMIN_CONTACT_URL=
+ADMIN_CONTACT_TEXT=Silakan hubungi admin untuk bantuan pembayaran, kendala produk, atau pertanyaan sebelum membeli.
 ```
 
-### Cara Mendapatkan Bot Token
+## Alur User Membeli Produk
 
-1. Buka [@BotFather](https://t.me/botfather) di Telegram
-2. Kirim command `/start`
-3. Kirim command `/newbot`
-4. Ikuti instruksi - berikan nama bot
-5. Setelah bot dibuat, copy token yang diberikan
-6. Paste ke file `.env` di variable `TELEGRAM_BOT_TOKEN`
-
-### Cara Setup Midtrans
-
-1. Buka [midtrans.com](https://midtrans.com)
-2. Sign up & verify email
-3. Login ke Midtrans Dashboard
-4. Go to Settings → Access Keys
-5. Copy `Server Key` dan `Client Key`
-6. Paste ke file `.env`
-
----
-
-## 📊 Database Schema
-
-Bot menggunakan SQLite dengan 7 tabel utama:
-
-### Users Table
-```sql
-- id (PK)
-- telegram_id (UNIQUE)
-- username
-- first_name, last_name
-- phone, address
-- created_at
+```text
+/start
+→ Katalog Produk
+→ Detail Produk
+→ baca deskripsi + S&K
+→ Saya Paham, Tambah ke Keranjang
+→ Keranjang Saya
+→ Checkout
+→ Review Sebelum Checkout
+→ Saya Setuju, Buat Pesanan
+→ bot kirim foto QRIS dinamis + caption
+→ user bayar
+→ bot cek payment otomatis
+→ produk digital dikirim otomatis
 ```
 
-### Products Table
-```sql
-- id (PK)
-- name
-- description
-- price
-- stock
-- image_url
-- category
-- created_at
+## Alur Admin Menambahkan Produk
+
+Buka:
+
+```text
+/admin
 ```
 
-### Cart Table
-```sql
-- id (PK)
-- telegram_id (FK)
-- product_id (FK)
-- quantity
-- added_at
+Pilih:
+
+```text
+➕ Tambah Produk Digital
 ```
 
-### Orders Table
-```sql
-- id (PK)
-- telegram_id (FK)
-- order_number (UNIQUE)
-- total_price
-- status (pending|processing|shipped|delivered|cancelled)
-- payment_status (unpaid|pending|paid)
-- payment_id
-- shipping_address
-- created_at, updated_at
+Lalu pilih jenis produk:
+
+```text
+📄 Text Saja
+📁 File Saja
+📁➕📄 File + Text
 ```
 
-### Order Items Table
-```sql
-- id (PK)
-- order_id (FK)
-- product_id (FK)
-- quantity
-- price
+### Contoh Produk File + Text
+
+Upload file sebagai dokumen, lalu isi caption:
+
+```text
+Nama: Paket Premium Bot
+Harga: 100000
+Stok: 999
+Kategori: Script
+Deskripsi: Paket ini berisi file ZIP script bot dan panduan penggunaan.
+S&K: Produk digital tidak bisa refund setelah dikirim. Pembeli wajib membaca deskripsi sebelum checkout.
+Text: Berikut panduan singkat: ekstrak file ZIP, buka README, lalu ikuti instruksi install di VPS.
 ```
 
-### Shipping Table
-```sql
-- id (PK)
-- order_id (FK - UNIQUE)
-- courier
-- tracking_number (UNIQUE)
-- status
-- location
-- estimated_delivery
-- updated_at
+### Contoh Produk Text Saja
+
+Kirim pesan ke bot setelah memilih **Text Saja**:
+
+```text
+Nama: Akses Premium
+Harga: 25000
+Stok: 999
+Kategori: Digital
+Deskripsi: Produk ini berisi akses/panduan premium dalam bentuk teks.
+S&K: Text dikirim setelah pembayaran sukses.
+Text: Ini isi produk yang akan dikirim ke pembeli setelah checkout berhasil.
 ```
 
-### Payments Table
-```sql
-- id (PK)
-- order_id (FK - UNIQUE)
-- amount
-- payment_method
-- transaction_id (UNIQUE)
-- status (pending|success|failed)
-- created_at, completed_at
+## Menu Admin
+
+Command utama:
+
+```text
+/admin
 ```
 
----
+Fitur admin:
 
-## 💡 Contoh Penggunaan
-
-### Menambah Produk (Admin)
-
-Database akan dibuat otomatis. Untuk menambah produk, gunakan:
-
-```sql
-INSERT INTO products (name, description, price, stock, category)
-VALUES ('Laptop Gaming', 'Laptop dengan spesifikasi tinggi', 15000000, 10, 'Elektronik');
+```text
+Dashboard Ringkas
+Kelola Produk Digital
+Tambah Produk Digital
+Edit Produk
+Hapus / Nonaktifkan Produk
+Kelola Pesanan
+Backup & Restore
+Export Laporan
+Pengaturan Bot
+Audit Log Admin
+Auto Setting Hubungi Admin
+Maintenance Mode
 ```
 
-### Generate Analytics Report
+## Command Admin Penting
+
+```text
+cek ORD-xxxx
+resend ORD-xxxx
+refund ORD-xxxx
+paid ORD-xxxx
+reject ORD-xxxx
+
+editprod ID harga 50000
+editprod ID stok 999
+editprod ID nama Nama Produk Baru
+editprod ID deskripsi Isi deskripsi baru
+editprod ID snk Isi S&K baru
+hapusprod ID
+aktifprod ID
+nonaktifprod ID
+
+coupon KODE percent 10 100
+coupon KODE fixed 5000 50
+delcoupon KODE
+
+setgopaykey TOKEN_PROVIDER
+setqrisexpired 10
+addcat Nama Kategori
+maintenance_on
+maintenance_off
+```
+
+## Command User
+
+```text
+/start
+/products
+/search nama_produk
+/cart
+/orders
+/tracking
+/contact
+/help
+voucher KODE
+rating ORD-xxxx PRODUCT_ID 5 komentar
+```
+
+## Backup & Restore
+
+Backup otomatis berjalan tiap hari jam 00:00 WIB jika aktif di `.env`:
+
+```env
+BACKUP_AUTO_ENABLED=true
+BACKUP_TIME=00:00
+BACKUP_TIMEZONE=Asia/Jakarta
+```
+
+Backup akan dikirim ke admin utama dan admin tambahan di `ADMIN_IDS`.
+
+Restore backup:
+
+```text
+/admin
+→ Backup & Restore
+→ Restore dari File Backup
+→ upload file backup .tar.gz
+→ konfirmasi restore
+```
+
+Backup bisa menyertakan `.env` jika:
+
+```env
+BACKUP_INCLUDE_ENV=true
+```
+
+File backup bersifat rahasia karena bisa berisi token bot, API key, database user, order, payment, produk, dan data transaksi.
+
+## QRIS Dinamis
+
+Bot menggunakan provider QRIS/GoPay otomatis.
+
+Saat checkout, bot akan:
+
+```text
+request QRIS ke provider
+menerima qr_url / transaction_id
+mengunduh gambar QRIS
+mengirim QRIS sebagai foto Telegram
+cek status payment berkala
+mengirim produk digital setelah payment sukses
+```
+
+Tampilan payment ke user adalah satu pesan:
+
+```text
+[Foto QRIS]
+📝 Detail Pembayaran
+Order
+Total
+Expired
+Instruksi bayar
+```
+
+Tidak ada link `Klik QRIS` dan tidak ada tombol `Buka QRIS`.
+
+## PM2
+
+Installer otomatis menjalankan bot dengan PM2.
+
+Command berguna:
 
 ```bash
-# Generate JSON report
-python analytics/analytics.py
-
-# Report akan tersimpan di folder 'reports/'
-# - analytics_report.json
-# - sales_report.csv
-# - analytics_chart.png
-```
-
-### Development dengan Auto-Reload
-
-```bash
-npm run dev
-# Bot akan restart otomatis saat ada perubahan file
-```
-
----
-
-## 🐛 Troubleshooting
-
-### ❌ Bot tidak merespons
-
-**Solusi:**
-```bash
-# Check apakah token sudah benar di .env
-# Restart bot
-npm start
-
-# Atau jalankan dengan logging
-DEBUG=telegraf:* npm start
-
-# Jika menggunakan PM2:
-pm2 restart telegram-bot
-pm2 logs telegram-bot
-```
-
-### ❌ Error: "Cannot find module 'telegraf'"
-
-**Solusi:**
-```bash
-npm install
-# atau
-npm install telegraf axios sqlite3 dotenv
-```
-
-### ❌ Database error
-
-**Solusi:**
-```bash
-# Delete database yang corrupt
-rm database/ecommerce.db
-
-# Bot akan membuat database baru otomatis
-npm start
-```
-
-### ❌ Pembayaran tidak terproses
-
-**Solusi:**
-1. Pastikan Midtrans keys sudah benar di `.env`
-2. Cek status di Midtrans Dashboard
-3. Verify akun Midtrans sudah lengkap
-4. Pastikan server dapat terhubung ke internet
-
-### ❌ Python analytics error
-
-**Solusi:**
-```bash
-# Pastikan Python 3.8+ installed
-python3 --version
-
-# Install dependencies ulang
-pip install -r requirements.txt
-```
-
-### ❌ VPS Deployment Issues
-
-**Bot tidak start setelah reboot:**
-```bash
-# Cek PM2 status
-pm2 list
-
-# Re-save configuration
+pm2 status
+pm2 logs ecommerce-bot
+pm2 restart ecommerce-bot
+pm2 stop ecommerce-bot
 pm2 save
-
-# Setup startup script
-sudo pm2 startup systemd -u $USER --hp $HOME
-pm2 save
 ```
 
-**Port sudah digunakan:**
+## Health Check
+
+Endpoint:
+
+```text
+/health
+```
+
+Digunakan untuk mengecek status bot, database, uptime, dan service utama.
+
+## Troubleshooting
+
+### Bot tidak jalan
+
 ```bash
-# Cek port yang digunakan
-lsof -i :3000
-
-# Kill process yang mengunakan port
-kill -9 <PID>
-
-# Atau gunakan port lain di .env
-# Ubah PORT=3001 di file .env
+pm2 logs ecommerce-bot
 ```
 
----
+Cek `.env`:
 
-## 📈 Fitur Lanjutan
-
-### Custom Notifications
-
-Edit file `analytics/notifications.py` untuk customize pesan notifikasi.
-
-### Custom Admin Commands
-
-Edit file `handlers/adminHandler.js` untuk menambah admin commands.
-
-### Custom Product Categories
-
-Tambahkan kategori baru di database products table.
-
-### Webhook Payment Notifications
-
-Setup webhook di Midtrans Dashboard untuk notifikasi pembayaran real-time.
-
----
-
-## 🚢 Deployment Options
-
-### Option 1: VPS (Recommended)
 ```bash
-# One-command deploy
-curl -fsSL https://raw.githubusercontent.com/belaaprilindameme/testing/main/install-vps.sh | bash
+nano .env
 ```
 
-### Option 2: Docker
+Pastikan minimal ada:
+
+```env
+TELEGRAM_BOT_TOKEN=
+ADMIN_ID=
+GOPAY_KEY=
+```
+
+### QRIS tidak muncul
+
+Pastikan:
+
+```text
+GOPAY_KEY benar
+Provider QRIS aktif
+VPS bisa akses internet
+QRIS_EXPIRED_MINUTES valid
+```
+
+### Produk tidak terkirim
+
+Admin bisa kirim ulang:
+
+```text
+resend ORD-xxxx
+```
+
+### Backup tidak terkirim
+
+Pastikan:
+
+```text
+ADMIN_ID benar
+admin sudah pernah /start ke bot
+BACKUP_AUTO_ENABLED=true
+```
+
+## Struktur Project
+
+```text
+index.js
+config/database.js
+handlers/adminHandler.js
+handlers/productHandler.js
+handlers/orderHandler.js
+handlers/paymentHandler.js
+handlers/trackingHandler.js
+services/backupService.js
+services/adminContactService.js
+services/adminNotifyService.js
+analytics/analytics.py
+install-linux.sh
+install-vps.sh
+ecosystem.config.js
+```
+
+## Catatan Keamanan
+
+- Jangan bagikan `.env`.
+- Jangan bagikan file backup ke orang lain.
+- Jangan tampilkan `GOPAY_KEY` atau `TELEGRAM_BOT_TOKEN` di chat publik.
+- Restore backup hanya boleh dilakukan admin.
+- File produk digital dikirim berdasarkan `file_id` Telegram yang tersimpan di database.
+
+## Update Terakhir
+
+README ini sudah disesuaikan dengan versi bot yang mendukung:
+
+```text
+one-command installer
+produk digital file/text/file+text
+QRIS dinamis foto + caption satu pesan
+admin dashboard
+backup restore
+PM2
+audit log
+export laporan
+maintenance
+health check
+```
+
+
+## 📣 Broadcast User
+
+Admin bisa mengirim broadcast ke semua user yang sudah pernah memakai bot. Broadcast mendukung:
+
+- text
+- foto + caption
+- video + caption
+
+Cara pakai dari menu:
+
+```text
+/admin
+→ 📣 Broadcast User
+→ pilih Broadcast Text / Foto / Video
+→ kirim konten
+→ cek preview
+→ ✅ Kirim Broadcast
+```
+
+Cara cepat broadcast text:
+
+```text
+/broadcast Isi pesan broadcast kamu di sini
+```
+
+Bot akan menampilkan preview dan meminta konfirmasi sebelum broadcast dikirim. Hanya admin yang bisa memakai fitur ini.
+
+Setting jeda antar user:
+
+```env
+BROADCAST_DELAY_MS=80
+```
+
+
+## 📝 Fitur Pre Order / Request Produk
+
+User bisa request produk yang belum tersedia di katalog.
+
+Alur user:
+
+```text
+/start
+→ 📝 Pre Order / Request Produk
+→ kirim request berupa text, foto, video, atau file/dokumen
+→ bot membuat QRIS dinamis
+→ user bayar
+→ setelah payment sukses, status berubah menjadi PROSES
+→ request + transaction ID dikirim ke admin
+```
+
+Setting harga pre order di `.env`:
+
+```env
+PREORDER_PRICE=50000
+```
+
+Setelah pembayaran pre order sukses, admin menerima:
+
+```text
+ID Pre Order
+Order ID
+Transaction ID
+Telegram ID user
+Request user
+```
+
+Command admin untuk melihat pre order:
+
+```text
+cekpo ID_PREORDER_ATAU_ORDER_ATAU_TRANSACTION
+```
+
+Command admin untuk mengirim hasil produk pre order ke user:
+
+```text
+sendpo ID_PREORDER_ATAU_ORDER_ATAU_TRANSACTION
+```
+
+Setelah command `sendpo`, admin cukup mengirim hasil produk berupa text, foto, video, atau file/dokumen. Bot akan meneruskan hasil tersebut ke user dan menandai pre order sebagai `delivered`.
+
+## Pre Order Advanced Flow
+
+Pre Order sekarang memakai alur quote dari admin:
+
+1. User membuka **Pre Order / Request Produk**.
+2. User membaca S&K lalu mengirim request berupa text, foto, video, atau file/dokumen.
+3. Bot mengirim request tersebut ke admin.
+4. Admin menentukan harga, tanggal pengerjaan, estimasi, dan catatan dengan command `setpo`.
+5. Bot mengirim invoice/penawaran ke user.
+6. User klik **Setuju & Bayar**.
+7. Bot membuat QRIS dinamis sebagai foto + caption dalam satu pesan.
+8. Setelah pembayaran sukses, status menjadi `process`.
+9. Admin mengirim hasil produk dengan `sendpo`.
+10. User bisa meminta revisi atau menandai selesai.
+
+Command utama:
+
+```text
+setpo PO-xxxx 75000 2026-05-25 2026-05-27 2 hari | Catatan admin
+editpo PO-xxxx harga 85000
+cekpo PO-xxxx
+invoicepo PO-xxxx
+sendpo PO-xxxx
+cancelpo PO-xxxx alasan pembatalan
+revision PO-xxxx alasan revisi
+completepo PO-xxxx
+```
+
+Panduan lengkap ada di `PREORDER_GUIDE.md`.
+
+## Audit Project
+
+Untuk mengecek syntax JS, Python, dan Bash sekaligus:
+
 ```bash
-docker build -t telegram-bot .
-docker run -d --env-file .env telegram-bot
+npm run audit
 ```
 
-### Option 3: Heroku
-```bash
-heroku login
-heroku create your-app-name
-git push heroku main
+
+## 🧹 Auto-Cleanup Data Lama
+
+Bot sudah memiliki cleanup otomatis untuk membersihkan data sementara/lama seperti QRIS expired, cart lama, log lama, report lama, dan backup lokal lama. Data penting seperti produk, user, order utama, payment utama, dan pre order aktif tidak dihapus.
+
+Menu admin:
+
+```text
+/admin → 🧹 Auto-Cleanup Data Lama
 ```
 
----
+Command manual:
 
-## 🤝 Kontribusi
+```text
+/cleanup
+```
 
-Kontribusi selalu welcome! 
-
-**Cara berkontribusi:**
-
-1. Fork repository ini
-2. Buat branch fitur (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
-5. Buat Pull Request
-
----
-
-## 📞 Support & Bantuan
-
-- 📖 Baca [SETUP_GUIDE.md](./SETUP_GUIDE.md) untuk panduan lengkap
-- 📚 Lihat [API_DOCS.md](./API_DOCS.md) untuk dokumentasi API
-- 🐛 Buat issue untuk melaporkan bug
-- 💬 Diskusi di Discussions tab
-
----
-
-## 📝 License
-
-Project ini menggunakan lisensi **MIT** - silakan lihat file [LICENSE](LICENSE) untuk detail.
-
----
-
-## 👨‍💻 Author
-
-**Mukarramah Hasaningsih** (@belaaprilindameme)
-
-- GitHub: [@belaaprilindameme](https://github.com/belaaprilindameme)
-- Telegram: [@belaaprilindameme](https://t.me/belaaprilindameme)
-
----
-
-## 🙏 Terima Kasih
-
-Terima kasih kepada:
-- [Telegraf.js](https://telegraf.dev) - Telegram Bot API
-- [Midtrans](https://midtrans.com) - Payment Gateway
-- [SQLite](https://www.sqlite.org) - Database
-- [PM2](https://pm2.keymetrics.io) - Process Manager
-- Semua contributor yang membantu project ini
-
----
-
-<div align="center">
-
-### ⭐ Jika project ini membantu, jangan lupa beri star! ⭐
-
-**Made with ❤️ for E-Commerce**
-
-**🚀 Ready to Deploy!**
-
-</div>
+Setting tersedia di `.env.example`, misalnya `CLEANUP_AUTO_ENABLED`, `CLEANUP_INTERVAL_MS`, `CLEANUP_QRIS_DAYS`, dan `CLEANUP_REPORT_DAYS`.

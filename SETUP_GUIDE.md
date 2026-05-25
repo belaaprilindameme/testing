@@ -9,7 +9,7 @@ Sebelum memulai, pastikan Anda sudah memiliki:
 1. **Node.js v14+** - Download dari [nodejs.org](https://nodejs.org)
 2. **Python 3.8+** - Download dari [python.org](https://www.python.org)
 3. **Telegram Bot Token** - Hubungi [@BotFather](https://t.me/botfather)
-4. **Midtrans Account** - Daftar di [midtrans.com](https://midtrans.com)
+4. **QRIS/GoPay Account** - Daftar di [qris-gopay.com](https://qris-gopay.com)
 
 ## 🚀 Instalasi & Setup
 
@@ -56,9 +56,11 @@ Edit file `.env` dan isi dengan kredensial Anda:
 # Telegram Bot Configuration
 TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 
-# Midtrans Payment Gateway
-MIDTRANS_SERVER_KEY=your_midtrans_server_key
-MIDTRANS_CLIENT_KEY=your_midtrans_client_key
+# QRIS/GoPay Payment Gateway
+QRIS_FILE_ID=
+QRIS_IMAGE_URL=
+GOPAY_NUMBER=08xxxxxxxxxx
+GOPAY_NAME=Nama Pemilik GoPay
 
 # Database
 DATABASE_PATH=./database/ecommerce.db
@@ -79,9 +81,9 @@ ADMIN_ID=your_telegram_user_id
 4. Ikuti instruksi dan copy token yang diberikan
 5. Paste ke file `.env` di `TELEGRAM_BOT_TOKEN`
 
-### Step 6: Setup Midtrans Account
+### Step 6: Setup QRIS/GoPay Account
 
-1. Buka [midtrans.com](https://midtrans.com)
+1. Buka [qris-gopay.com](https://qris-gopay.com)
 2. Daftar dan verify akun Anda
 3. Login ke dashboard
 4. Pergi ke Settings → Access Keys
@@ -152,7 +154,7 @@ testing/
 ├── handlers/
 │   ├── productHandler.js    # Katalog & produk
 │   ├── orderHandler.js      # Keranjang & pesanan
-│   ├── paymentHandler.js    # Pembayaran Midtrans
+│   ├── paymentHandler.js    # Pembayaran QRIS/GoPay
 │   ├── trackingHandler.js   # Tracking pesanan
 │   └── adminHandler.js      # Panel admin
 │
@@ -171,11 +173,11 @@ testing/
 
 ## 🔗 Integrasi Pembayaran
 
-Bot menggunakan **Midtrans** untuk pembayaran:
+Bot menggunakan **QRIS/GoPay** untuk pembayaran:
 
 1. User memilih produk dan checkout
-2. Sistem generate payment link via Midtrans
-3. User diarahkan ke Midtrans payment page
+2. Sistem generate payment link via QRIS/GoPay
+3. User diarahkan ke QRIS/GoPay payment page
 4. Setelah pembayaran berhasil, notifikasi dikirim
 5. Pesanan diproses otomatis
 
@@ -198,7 +200,7 @@ Semua tabel dibuat otomatis saat bot pertama kali dijalankan.
 - Token disimpan di `.env` (jangan di-commit ke Git)
 - Password & API key tidak pernah di-hardcode
 - Database terenkripsi secara lokal
-- Semua transaksi melalui Midtrans yang tersertifikasi
+- Semua transaksi melalui QRIS/GoPay yang tersertifikasi
 
 ## 🐛 Troubleshooting
 
@@ -222,9 +224,9 @@ npm start
 
 ### Pembayaran tidak terproses
 
-- Pastikan Midtrans keys sudah benar di `.env`
-- Cek status di dashboard Midtrans
-- Verify akun Midtrans Anda
+- Pastikan QRIS/GoPay keys sudah benar di `.env`
+- Cek status di dashboard QRIS/GoPay
+- Verify akun QRIS/GoPay Anda
 
 ## 📞 Support
 
@@ -241,3 +243,8 @@ Pull request welcome! Silakan fork dan submit changes.
 ---
 
 **Happy Coding! 🚀**
+
+
+## Pembayaran QRIS/GoPay
+
+Versi ini memakai pembayaran QRIS/GoPay dengan verifikasi admin. Setelah user checkout, bot menampilkan nomor order, total bayar, QRIS/GoPay, dan instruksi kirim bukti pembayaran. Admin mengetik `paid NOMOR_ORDER` untuk menandai pembayaran berhasil dan bot otomatis mengirim produk digital. Admin dapat mengetik `reject NOMOR_ORDER` untuk menolak pembayaran.
